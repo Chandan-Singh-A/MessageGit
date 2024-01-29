@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <title>Login</title>
+    <style>
+        body {
+            background-color: thistle;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #login-div {
+            background-color: slategrey;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+        }
+
+        #details {
+            margin-bottom: 15px;
+        }
+
+        #details label {
+            display: block;
+            font-weight: bold;
+        }
+
+        #details input[type="email"] {
+            width: 90%;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 3px;
+        }
+
+        #details input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 3px;
+        }
+
+        #details input[type="submit"] {
+            background-color: #007bff;
+            color: cornsilk;
+            border: none;
+            border-radius: 3px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: snow;
+            font-size: large;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-div">
+        <h2>Login</h2>
+        <div id="details">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div id="details">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div id="details">
+            <button id="login-button" style="background-color: #007bff;">Login</button>
+        </div>
+        <div id="details">
+            <!-- <p style="color:blue;">Password must be 8 digit</p> -->
+        </div>
+        <!-- <a href="/forgotmail">Forgot Password?</a> -->
+        <!-- <p>Are You a Seller? <a href="/seller/sellerlogin">Login As Seller</a></p> -->
+        <p>Don't have An Account? <a href="/signup">Signup Here</a></p>
+        <p id="error"></p>
+    </div>
+</body>
+
+</html>
+<script>
+    var btn = document.getElementById("login-button");
+    btn.addEventListener("click", function () {
+        console.log("HI Login");
+        var e = document.getElementById("email");
+        // var u = document.getElementById("username");
+        var p = document.getElementById("password");
+        var p1 = document.getElementById("error");
+        var email = e.value.trim();
+        // var username = u.value.trim();
+        var password = p.value.trim();
+        console.log(email, password);
+        if (email != "" && password != "") {
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "email": email, "pass": password }),
+            }).then((result) => {
+                if (result.status == 200) {
+                    console.log(12);
+                    p1.innerText = "Login Successfull Redirecting To Messaging-App";
+                    p1.style.color = "blue";
+                    setTimeout(function () {
+                        p1.innerHTML = "";
+                        window.location.href = "/";
+                    }, 1500);
+                } else if (result.status == 300) {
+                    p1.innerText = "Given Crediantials Are Not Correct";
+                    p1.style.color = "red";
+                    setTimeout(function () {
+                        p.innerHTML = "";
+                        // window.location.href = "/login";
+                    }, 1500);
+                } else if (result.status === 350) {
+                    p1.innerText = "Given Crediantials Are Not Correct";
+                    p1.style.color = "red";
+                    setTimeout(function () {
+                        p1.innerHTML = "";
+                        // window.location.href = "/login";
+                    }, 1500);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+
+            e.value = "";
+            p.value = "";
+        } else {
+            // alert("Fill Details Properly");
+            swal({
+                title: "Fill Details Properly",
+                icon: "warning",
+            })
+        }
+    });
+</script>
+
+<!-- </html> -->
+<!-- SELECT *
+FROM Sales.SalesOrderHeader
+ORDER BY OrderDate
+OFFSET (@Skip) ROWS FETCH NEXT (@Take) ROWS ONL -->

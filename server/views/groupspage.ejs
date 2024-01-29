@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<head>
+    <title>Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        #chat-list {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #message-container {
+            border: 2px solid;
+            flex: 1;
+            padding: 20px;
+            height: 600px;
+            overflow: auto;
+        }
+
+        .chat-item {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .chat-item:hover {
+            background-color: #e0e0e0;
+        }
+
+        .message {
+            background-color: #e0e0e0;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .group-ul li {
+            list-style: none;
+            padding: 10px;
+        }
+
+        #member-ul li{
+            padding: 10px;
+        }
+
+        #add-members{
+            background-color: slategrey;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .accbutton{
+           margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="groups-container">
+        <h2 id="backbutton" onclick="backpage()">Back</h2>
+        <ul id="group-ul" class="group-ul">
+        </ul>
+    </div>
+    <div id="message-container">
+    </div>
+    <div id="sendmessage">
+        <input type="text" placeholder="Enter Your Message" id="message-input" class="message-input">
+        <button style="background-color: slategrey;" id="message-button">Send</button>
+        <br>
+        <input style="margin: 10px;" type="text" placeholder="Search People" id="membername" class="message-input">
+        <br>
+        <ul id="member-ul">
+        </ul>
+    </div>
+</body>
+<script>
+    var groupul = document.getElementById("group-ul");
+    var chatdiv = document.getElementById("message-container");
+    var input = document.getElementById("message-input");
+    var button = document.getElementById("message-button");
+    var addmemberbutton=document.getElementById("add-members");
+    var memberinput=document.getElementById("membername");
+    var gid,gname;
+    loadgroups();
+    function loadgroups() {
+        fetch("/getgroups")
+            .then((result) => {
+                return result.json()
+            }).then((result) => {
+                console.log(result);
+                result.forEach(element => {
+                    showgroups(element);
+                });
+            }).catch((err) => {
+                console.log(err);
+            });
+    }
+
+    function backpage(){
+        window.location.href="/"
+    }
+
+    function showgroups(ob) {
+        let li = document.createElement("li");
+        li.innerHTML = ob.gname; 
+        li.setAttribute("id", gid)
+        groupul.appendChild(li);
+        li.addEventListener("click", () => {
+            gid = ob.groupid;
+            gname=ob.gname;
+            chatdiv.innerHTML = "";
+            console.log(gid);
+            fetch("/getgroupmessages?gid=" + gid)
+                .then((result) => {
+                    return result.json()
+                }).then((result) => {
+                    result.forEach((element) => {
+                        addmessage(element.text);
+                    })
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        })
+    }
+
+    button.addEventListener("click", () => {
+        let message = input.value.trim();
+        input.value = "";
+        if (message !== "") {
+            addmessage(message);
+            fetch("/savemessage", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "message": message, "gid": gid })
+            }).then((result) => {
+                if (result.status == 200) {
+                    console.log("Messaged Saved To Databased");
+                } else {
+                    console.log("Message is Not Saved");
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        } else {
+            alert("Cannot Send Empty Message");
+        }
+    })
+
+    function addmessage(message) {
+        let msgdiv = document.createElement("div");
+        msgdiv.setAttribute("class", "message");
+        msgdiv.innerHTML = message;
+        chatdiv.appendChild(msgdiv);
+    }
+
+    memberinput.addEventListener("keypress",(e)=>{
+        if(e.key==="Enter"){
+            let name=memberinput.value.trim();
+            if(name!==""){
+                fetch("/searchmember?name="+name+"&gid="+gid)
+                .then((result) => {
+                    return result.json();
+                }).then((result)=>{
+                    if(result.length===0){
+                        alert("no result found");
+                    }else{
+                        result.forEach((element)=>{
+                            showmembers(element);
+                        })
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }else{
+                alert("Cannot Search Empty Name");
+            }
+        }
+    })
+
+    function showmembers(ob){
+        let ul=document.getElementById("member-ul");
+        let li=document.createElement("li");
+        let accbutton=document.createElement("button");
+        accbutton.innerHTML="Add";
+        accbutton.setAttribute("class","accbutton");
+        accbutton.style.backgroundColor="slategrey"
+        li.setAttribute("id",ob.id);
+        li.innerHTML=ob.username;
+        li.appendChild(accbutton);
+        ul.appendChild(li);
+        accbutton.addEventListener("click",()=>{
+            fetch("/sendreqmember",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({"email":ob.email,"gid":gid,"gname":gname})
+            }).then((result) => {
+                if(result.status===200){
+                    alert("Request Sent Of This Group");
+                    ul.removeChild(li);
+                }else{
+                    alert("Internal Server Error");
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        })
+    }
+
+</script>
+
+</html>

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "mailjet": "^0.0.1"
+  }
+}

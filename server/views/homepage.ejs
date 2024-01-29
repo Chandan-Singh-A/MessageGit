@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Group Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .option {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .option:hover {
+            background-color: slategrey;
+        }
+
+        .options {
+            display: block;
+        }
+
+        #group-form {
+            display: none;
+        }
+
+        #logout-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            padding: 10px;
+            background-color: slategrey;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #logout-button:hover {
+            background-color: red;
+        }
+
+        #invitation-request {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -70%);
+            width: 350px;
+            height: 250px;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            border: 2px solid;
+            overflow: auto;
+            background-color: #ccc;
+        }
+
+        #close-button {
+            background-color: slategray;
+            margin-top: 180px;
+            margin-right: 30px;
+        }
+
+        .acc-rej {
+            margin-left: 5px;
+        }
+
+        .column {
+            float: left;
+            width: 30%;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        #dashboard-maindiv {
+            margin-left: 200px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <button id="logout-button" onclick="logout()">Logout</button>
+    <h1>Group Management Options</h1>
+    <div id="options" class="options">
+        <div id="create-group" class="option">
+            <h2>Create a Group</h2>
+        </div>
+        <div id="show-groups" class="option">
+            <h2>Show Groups</h2>
+        </div>
+        <div id="invite-person" class="option">
+            <h2>Invitation Request</h2>
+        </div>
+        <div id="dashboard-div" class="option">
+            <h2>Dashboard</h2>
+        </div>
+    </div>
+    <div id="group-form" class="option">
+        <h5>Enter Group Name</h5>
+        <input type="text" placeholder="Group name" id="group-name">
+        <button id="cancel-button" style="color: rgb(206, 17, 58);" style="background-color: slategrey;">Cancel</button>
+        <button id="submit-button" style="color: lightslategrey;" style="background-color: slategrey;">Submit</button>
+    </div>
+    <div id="invitation-request">
+        <ul id="request-ul">
+        </ul>
+        <button id="close-button" onclick="closebutton()">Close</button>
+    </div>
+    <div id="dashboard-maindiv">
+        <div id="topuser-div" class="column">
+            <h2>Top Users</h2>
+            <!-- <p>User 1</p>
+            <p>User 2</p>
+            <p>User 3</p> -->
+        </div>
+
+        <div id="topgroup-div" class="column">
+            <h2>Top Groups</h2>
+            <!-- <p>Group A</p>
+            <p>Group B</p>
+            <p>Group C</p> -->
+        </div>
+
+        <div id="topregion-div" class="column">
+            <h2>Top Regions</h2>
+            <p>Region X</p>
+            <p>Region Y</p>
+            <p>Region Z</p>
+        </div>
+    </div>
+</body>
+<script>
+    function logout() {
+        window.location.href = "/logout"
+    }
+    var maindiv = document.getElementById("options")
+    var creategroup = document.getElementById("create-group");
+    var groupform = document.getElementById("group-form");
+    var cancelbutton = document.getElementById("cancel-button");
+    var submitbutton = document.getElementById("submit-button");
+    var showgroups = document.getElementById("show-groups");
+    var invite = document.getElementById("invite-person");
+    var inviterequest = document.getElementById("invitation-request");
+    var requl = document.getElementById("request-ul");
+    var dashboarddiv = document.getElementById("dashboard-div");
+    function closebutton() {
+        inviterequest.style.display = "none";
+    }
+    creategroup.addEventListener("click", function () {
+        console.log("Clicked");
+        maindiv.style.display = "none";
+        groupform.style.display = "block";
+    })
+    cancelbutton.addEventListener("click", () => {
+        console.log("Cancel Button Clicked");
+        maindiv.style.display = "block";
+        groupform.style.display = "none";
+    })
+    submitbutton.addEventListener("click", () => {
+        console.log("Submit Button Clicked");
+        let gname = document.getElementById("group-name").value.trim();
+        if (gname !== "") {
+            fetch("/creategroup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "gname": gname })
+            })
+                .then((result) => {
+                    if (result.status === 200) {
+                        alert("Group Created");
+                        maindiv.style.display = "block";
+                        groupform.style.display = "none";
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                    alert("Error While Creating Group");
+                });
+            document.getElementById("group-name").value = "";
+        } else {
+            alert("Gorup Name Cannnot Be Empty");
+        }
+    })
+
+    invite.addEventListener("click", () => {
+        inviterequest.style.display = "flex";
+        fetch("/getgroupreq")
+            .then((result) => {
+                return result.json();
+            }).then((result) => {
+                requl.innerHTML = "";
+                result.forEach((element) => {
+                    showrequest(element)
+                })
+                if (requl.innerHTML === "") {
+                    let li = document.createElement("li");
+                    li.innerHTML = "No Requests";
+                    requl.appendChild(li);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+    })
+
+    function showrequest(ob) {
+        let li = document.createElement("li");
+        let hr = document.createElement("hr");
+        li.setAttribute("id", ob.id);
+        li.innerHTML = ob.gname;
+        let acceptreq = document.createElement("button");
+        acceptreq.innerHTML = "Accept"
+        acceptreq.setAttribute("class", "acc-rej")
+        let rejectreq = document.createElement("button");
+        rejectreq.innerHTML = "Reject"
+        rejectreq.setAttribute("class", "acc-rej")
+        li.appendChild(rejectreq);
+        li.appendChild(acceptreq);
+        li.appendChild(hr);
+        requl.appendChild(li);
+        acceptreq.addEventListener("click", () => {
+            fetch("/acceptreq", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "id": ob.id })
+            }).then((result) => {
+                if (result.status === 200) {
+                    alert("Request Accepted");
+                    requl.removeChild(li);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        })
+        rejectreq.addEventListener("click", () => {
+            fetch("/rejectreq", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "id": ob.id })
+            }).then((result) => {
+                if (result.status === 200) {
+                    alert("Group Request Rejected");
+                    requl.removeChild(li);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        })
+    }
+
+    showgroups.addEventListener("click", () => {
+        window.location.href = "/groupspage"
+    })
+
+    dashboarddiv.addEventListener("click", () => {
+        let dashboard = document.getElementById("dashboard-maindiv");
+        console.log(dashboard.style.display,101);
+        if (dashboard.style.display === "none") {
+            dashboard.style.display = "block";
+            fetch("/gettopusers")
+                .then((result) => {
+                    return result.json();
+                })
+                .then((result) => {
+                    result.forEach((element) => {
+                        showtopusers(element);
+                    })
+                }).catch((err) => {
+                    console.log(err);
+                });
+            fetch("/gettopgroups")
+                .then((result) => {
+                    return result.json();
+                })
+                .then((result) => {
+                    console.log(result);
+                    result.forEach((element) => {
+                        showtopgroups(element);
+                    })
+                }).catch((err) => {
+                    console.log(err);
+                });
+        }else{
+            dashboard.style.display="none";
+        }
+    })
+    function showtopusers(ob) {
+        let div = document.getElementById("topuser-div");
+        let p = document.createElement("p");
+        p.innerHTML = ob.username;
+        div.appendChild(p);
+    }
+
+    function showtopgroups(ob) {
+        let div = document.getElementById("topgroup-div")
+        let p = document.createElement("p");
+        p.innerHTML = ob.groupname;
+        div.appendChild(p);
+    }
+</script>
+
+</html>
